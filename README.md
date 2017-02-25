@@ -1,4 +1,4 @@
-# Instration
+# Tree Tagger Instration
 
 1. Download the tagger package for your system (PC-Linux, Mac OS-X, ARM-Linux).
 
@@ -34,5 +34,27 @@
 
        echo 'Das ist ein Test.' | cmd/tagger-chunker-german
 
-# Tree Tagger Site
+## Tree Tagger Site
 http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/
+
+# Python Dependency
+1. Tree Tagger Wapper
+
+       pip install treetaggerwrapper
+
+2. Mongo DB
+
+       sudo apt-get install -y mongodb-org
+       pip install pymongo
+
+3. Word Cloud
+
+       git clone https://github.com/amueller/word_cloud
+       cd word_cloud/
+       pip install .
+
+4. Matplotlib
+
+       sudo apt-get build-dep python3-matplotlib
+       sudo apt-get install -y fonts-migmix
+       pip install matplotlib
