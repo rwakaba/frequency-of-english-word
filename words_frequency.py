@@ -1,5 +1,4 @@
-import sys, os
-sys.path.append(os.pardir)
+import sys, os, csv
 from argparse import ArgumentParser
 from collections import Counter
 
@@ -7,7 +6,8 @@ from pymongo import MongoClient
 import treetaggerwrapper
 from wordcloud import WordCloud
 
-from common.functions import get_tokens, word_and_count, save_image
+sys.path.append(os.pardir)
+from common.functions import get_tokens, word_and_count_gen, writecsv_frequency, stdout_frequency, save_image
 
 class AwsBlogNP():
   def __init__(self):
@@ -31,7 +31,7 @@ class AwsBlogNP():
     print('{0}, blog num:'.format(year), blog_num, file=sys.stderr)
     return word_and_count(frequency, blog_num, num=500)
 
-  def frequency_by_pos(self, pos_set):
+  def frequency_by_pos(self, pos_set, outpath=None, delimiter=','):
     frequency = Counter()
     blog_num = 0
     blog_processed_count = 0
@@ -46,7 +46,10 @@ class AwsBlogNP():
       if (blog_processed_count % 100 == 0):
         print("Processed {0} posts..".format(blog_processed_count), file=sys.stderr)
 
-    return word_and_count(frequency, blog_num, num=500)
+    ranknum = 500
+    if outpath:
+      writecsv_frequency(outpath, word_and_count_gen(frequency, ranknum, blog_num), delimiter)
+    stdout_frequency(word_and_count_gen(frequency, ranknum, blog_num))
 
   def gen_word_cloud_per_year(self, year):
     freq = self._frequency_per_year(year)
@@ -59,7 +62,7 @@ if __name__ == '__main__':
           .format(__file__)
   argparser = ArgumentParser(usage=usage)
   argparser.add_argument('pos', type=str,
-                         help='None, Verb, Adjective or Adverb')
+                         help='none, verb, adjective or adverb')
   argparser.add_argument('-o', '--out', type=str,
                          action='store',
                          help='todo')
@@ -70,9 +73,10 @@ if __name__ == '__main__':
                          dest='another_file',
                          help='concatnate target file name')
   args = argparser.parse_args()
+  outpath = None
   if args.out:
     print("out is {0}".format(args.out))
-    fpath = args.out
+    outpath = args.out
   if args.wordcloud:
     print("word is true")
     # TODO switch way to save to word cloud.
@@ -81,15 +85,15 @@ if __name__ == '__main__':
   if args.pos == 'None':
     for year in range(2012, 2018):
       aws_blog_np.gen_word_cloud_per_year(year)
-  elif args.pos == 'Verb':
+  elif args.pos == 'verb':
     pos_set = {'VV', 'VVN', 'VVG', 'VVP', 'VVD', 'VVZ', 'VB', 'VBD', 'VBZ', 'VBG', 'VBN', 'VBP'}
-    aws_blog_np.frequency_by_pos(pos_set)
-  elif args.pos == 'Adjective':
+    aws_blog_np.frequency_by_pos(pos_set, outpath=outpath)
+  elif args.pos == 'adjective':
     pos_set = {'JJ', 'JJR', 'JJS'}
-    aws_blog_np.frequency_by_pos(pos_set)
+    aws_blog_np.frequency_by_pos(pos_set, outpath=outpath)
   elif args.pos == 'adverb':
     pos_set = {'RB', 'RBR', 'RBS'}
-    aws_blog_np.frequency_by_pos(pos_set)
+    aws_blog_np.frequency_by_pos(pos_set, outpath=outpath)
   else:
     print("Unsupport POS was specified. {0}".format(args.pos))
 
