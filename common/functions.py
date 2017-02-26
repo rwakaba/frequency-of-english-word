@@ -1,3 +1,4 @@
+import csv
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt   
@@ -18,14 +19,26 @@ def get_tokens(tagger, paragraph, pos_set, stopwords={}):
   # print(pos_map, file=sys.stderr)
   return tokens
 
-def word_and_count(frequency, blog_num, num):
-  freq = {}
+def writecsv_frequency(outpath, vals_gen, delimiter=','):
+  with open(outpath, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile, delimiter=delimiter)
+    # writer = csv.DictWriter(csvfile, fieldnames=['word', 'count', 'frequency'], delimiter=delimiter)
+    writer.writerow(['word', 'count', 'frequency'])
+    # writer.writeheader()
+    for token, count, freq in vals_gen:
+      writer.writerow([token, count, freq])
+
+def stdout_frequency(vals_gen):
   print('{0}\t{1}\t{2}'.format('word', 'count', 'count/blog number of the year'))
   print('{0}\t{1}\t{2}'.format('----', '-----', '-----------------------------'))
+  for token, count, freq in vals_gen:
+    print('{0}\t{1}\t{2}'.format(token, count, freq))
+
+def word_and_count_gen(frequency, num, totalnum):
+  freq = {}
   for token, count in frequency.most_common(num):
-    print('{0}\t{1}\t{2}'.format(token, count, (count / blog_num)))
-    freq[token] = count
-  return freq
+    freq = count / totalnum
+    yield token, count, freq
 
 def save_image(content, fpath):
   plt.imshow(content)
