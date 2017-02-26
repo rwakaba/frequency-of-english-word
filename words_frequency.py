@@ -57,7 +57,7 @@ class AwsBlogNP():
     wordcloud = WordCloud().generate_from_frequencies(freq)
     save_image(wordcloud, "{0}.png".format(year))
 
-if __name__ == '__main__':
+def parseArgs():
   usage = 'Usage: python {} POS [--out <file>] [--wordcloud] [--help]'\
           .format(__file__)
   argparser = ArgumentParser(usage=usage)
@@ -73,15 +73,19 @@ if __name__ == '__main__':
                          dest='another_file',
                          help='concatnate target file name')
   args = argparser.parse_args()
+  return args
+
+if __name__ == '__main__':
+  args = parseArgs()
   outpath = None
   if args.out:
-    print("out is {0}".format(args.out))
     outpath = args.out
   if args.wordcloud:
-    print("word is true")
+    pass
     # TODO switch way to save to word cloud.
 
   aws_blog_np = AwsBlogNP()
+
   if args.pos == 'None':
     for year in range(2012, 2018):
       aws_blog_np.gen_word_cloud_per_year(year)
