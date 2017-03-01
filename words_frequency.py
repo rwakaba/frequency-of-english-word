@@ -9,13 +9,13 @@ from wordcloud import WordCloud
 sys.path.append(os.pardir)
 from common.functions import get_tokens, word_and_count_gen, writecsv_frequency, stdout_frequency, save_image
 
-class AwsBlogNP():
+class AwsBlogWordFrequency():
+
   def __init__(self):
     self.client = MongoClient('localhost', 27017)
     self.db = self.client['aws-blogs']
     self.collection = self.db['posts']
     print('posts count ', self.collection.count(), file=sys.stderr)
-    
     self.tagger = treetaggerwrapper.TreeTagger(TAGLANG='en', TAGDIR='.')
 
   def _frequency_per_year(self, year):
@@ -30,6 +30,12 @@ class AwsBlogNP():
         frequency.update(tokens)
     print('{0}, blog num:'.format(year), blog_num, file=sys.stderr)
     return word_and_count(frequency, blog_num, num=500)
+
+  def gen_word_cloud_per_year(self, year):
+    freq = self._frequency_per_year(year)
+    # print(freq, file=sys.stderr)
+    wordcloud = WordCloud().generate_from_frequencies(freq)
+    save_image(wordcloud, "{0}.png".format(year))
 
   def frequency_by_pos(self, pos_set, outpath=None, delimiter=','):
     frequency = Counter()
@@ -50,12 +56,6 @@ class AwsBlogNP():
     if outpath:
       writecsv_frequency(outpath, word_and_count_gen(frequency, ranknum, blog_num), delimiter)
     stdout_frequency(word_and_count_gen(frequency, ranknum, blog_num))
-
-  def gen_word_cloud_per_year(self, year):
-    freq = self._frequency_per_year(year)
-    # print(freq, file=sys.stderr)
-    wordcloud = WordCloud().generate_from_frequencies(freq)
-    save_image(wordcloud, "{0}.png".format(year))
 
 def parseArgs():
   usage = 'Usage: python {} POS [--out <file>] [--wordcloud] [--help]'\
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     pass
     # TODO switch way to save to word cloud.
 
-  aws_blog_np = AwsBlogNP()
+  aws_blog_np = AwsBlogWordFrequency()
 
   if args.pos == 'None':
     for year in range(2012, 2018):
