@@ -7,7 +7,7 @@ import treetaggerwrapper
 from wordcloud import WordCloud
 
 sys.path.append(os.pardir)
-from common.functions import get_tokens, word_and_count_gen, writecsv_frequency, stdout_frequency, save_image
+from common.functions import get_tokens, word_and_count_gen, word_and_count, writecsv_frequency, stdout_frequency, save_image
 
 class AwsBlogWordFrequency():
 
@@ -37,16 +37,16 @@ class AwsBlogWordFrequency():
     wordcloud = WordCloud().generate_from_frequencies(freq)
     save_image(wordcloud, "{0}.png".format(year))
 
-  def frequency_by_pos(self, pos_set, outpath=None, delimiter=','):
-    frequency = Counter()
+  def frequency_by_pos(self, pos_set, outpath=None, delimiter=',', cond=None):
+    self.frequency = Counter()
     blog_num = 0
     blog_processed_count = 0
-    stopwords = {'AWS', 'Amazon', 'be', 'use', 'create', 'make', 'run', 'start'}
-    for post in self.collection.find():
+    stopwords = {'AWS', 'Amazon', 'Jeff', 'Here’s', 'and', 'be', 'use', 'create', 'make', 'run', 'start'}
+    for post in self.collection.find(cond):
       blog_num += 1
       for p in post['body']:
         tokens = get_tokens(self.tagger, p, pos_set=pos_set, stopwords=stopwords)
-        frequency.update(tokens)
+        self.frequency.update(tokens)
 
       blog_processed_count += 1
       if (blog_processed_count % 100 == 0):
@@ -54,8 +54,8 @@ class AwsBlogWordFrequency():
 
     ranknum = 500
     if outpath:
-      writecsv_frequency(outpath, word_and_count_gen(frequency, ranknum, blog_num), delimiter)
-    stdout_frequency(word_and_count_gen(frequency, ranknum, blog_num))
+      writecsv_frequency(outpath, word_and_count_gen(self.frequency, ranknum, blog_num), delimiter)
+    stdout_frequency(word_and_count_gen(self.frequency, ranknum, blog_num))
 
 def parseArgs():
   usage = 'Usage: python {} POS [--out <file>] [--wordcloud] [--help]'\
@@ -64,6 +64,9 @@ def parseArgs():
   argparser.add_argument('pos', type=str,
                          help='none, verb, adjective or adverb')
   argparser.add_argument('-o', '--out', type=str,
+                         action='store',
+                         help='todo')
+  argparser.add_argument('-od', '--outdir', type=str,
                          action='store',
                          help='todo')
   argparser.add_argument('-wc', '--wordcloud',
@@ -86,9 +89,12 @@ if __name__ == '__main__':
 
   aws_blog_np = AwsBlogWordFrequency()
 
-  if args.pos == 'None':
+  if args.pos == 'none':
+    pos_set = {'NP'}
     for year in range(2012, 2018):
-      aws_blog_np.gen_word_cloud_per_year(year)
+      aws_blog_np.frequency_by_pos(pos_set, outpath="{0}/{1}.csv".format(args.outdir, year), cond={'year': year})
+      wordcloud = WordCloud().generate_from_frequencies(word_and_count(aws_blog_np.frequency, 100))
+      save_image(wordcloud, "{0}/{1}.png".format(args.outdir, year))
   elif args.pos == 'verb':
     pos_set = {'VV', 'VVN', 'VVG', 'VVP', 'VVD', 'VVZ', 'VB', 'VBD', 'VBZ', 'VBG', 'VBN', 'VBP'}
     aws_blog_np.frequency_by_pos(pos_set, outpath=outpath)
